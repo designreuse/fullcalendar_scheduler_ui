@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Scheduler</title>
+    <link href='lib/fullcalendar.min.css' rel='stylesheet' />
+    <link href='lib/fullcalendar.print.css' rel='stylesheet' media='print' />
+    <link href='scheduler.min.css' rel='stylesheet' />
+    <script src='lib/moment.min.js'></script>
+    <script src='lib/jquery.min.js'></script>
+    <script src='lib/fullcalendar.min.js'></script>
+    <script src='scheduler.min.js'></script>
+    <script src='lang-all.js'></script>
+    <link rel="stylesheet" href="bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script src="DatePicker/WdatePicker.js"></script>
+    <script>
+        var eventDialog;
+        var updateEvent = null;
+        $(function() { // document ready
+
+            $(".btn-add-event").click(function(){
+                var event_id = $("#event_id").val();
+                var resourceTitle = $("#event_id").find("option:selected").text();
+                var event_date = $("#event_date").val();
+                var event_type = $("#event_type").val();
+                var event_time_start = $("#event_time_start").val();
+                var event_time_end = $("#event_time_end").val();
+                var event_content = $("#event_content").val();
+
+                if(event_id == "" ){
+                    alert("请选择事件");
+                    return false;
+                }
+                if(event_date == "" ){
+                    alert("请选择日期");
+                    return false;
+                }
+                if(event_type == "" ){
+                    alert("请选择类型");
+                    return false;
+                }
+                if(event_time_start == "" ){
+                    alert("请选择开始时间");
+                    return false;
+                }
+                if(event_time_end == "" ){
+                    alert("请选择结束时间");
+                    return false;
+                }
+                if(event_content == "" ){
+                    alert("请填写具体内容");
+                    return false;
+                }
+                var uuid = new Date().getTime();
+                var event = [{  uuid: uuid, resourceId: event_id, resourceTitle: resourceTitle, start: event_date+"T"+event_time_start, end: event_date+"T"+event_time_end, title: event_type+event_content, etype: event_type,content: event_content,allDay : false }];
+                console.log(event);
+                $('#calendar').fullCalendar('addEventSource', event);
+                $('#calendar').fullCalendar( 'refetchEvents' );
+
+                // 清理现场
+                $("#event_id").val("");
+                $("#event_date").val("");
+                $("#event_type").val("");
+                $("#event_time_start").val("");
+                $("#event_time_end").val("");
+                $("#event_content").val("");
+                $("#myModal").modal('hide');
+
+            });
+
+            $(".btn-update-event").click(function(){
+
+                var event_date = $("#event_date_edit").val();
+                var event_type = $("#event_type_edit").val();
+                var event_time_start = $("#event_time_start_edit").val();
+                var event_time_end = $("#event_time_end_edit").val();
+                var event_content = $("#event_content_edit").val();
+
+                if(event_date == "" ){
+                    alert("请选择日期");
+                    return false;
+                }
+                if(event_type == "" ){
+                    alert("请选择类型");
+                    return false;
+                }
+                if(event_time_start == "" ){
+                    alert("请选择开始时间");
+                    return false;
+                }
+                if(event_time_end == "" ){
+                    alert("请选择结束时间");
+                    return false;
+                }
+                if(event_content == "" ){
+                    alert("请填写具体内容");
+                    return false;
+                }
+
+                if(updateEvent != null){
+
+                    updateEvent.event_date = event_date;
+                    updateEvent.etype = event_type;
+                    updateEvent.start = event_date+"T"+event_time_start;
+                    updateEvent.end = event_date+"T"+event_time_end;
+                    updateEvent.content = event_content;
+                    updateEvent.title = event_type+event_content;
+
+                    // 更新日程
+                    $('#calendar').fullCalendar('updateEvent', updateEvent);
+                }
+
+                // 清理现场
+                $("#event_id_edit").val("");
+                $("#event_date_edit").val("");
+                $("#event_type_edit").val("");
+                $("#event_time_start_edit").val("");
+                $("#event_time_end_edit").val("");
+                $("#event_content_edit").val("");
+                $("#myEditModal").modal('hide');
+                updateEvent = null;
+            });
+
+            $(".btn-delete-event").click(function(){
+                if(updateEvent != null){
+                    // 更新日程
+                    $('#calendar').fullCalendar('removeEvents', updateEvent._id);
+
+                }
+                // 清理现场
+                $("#event_id_edit").val("");
+                $("#event_date_edit").val("");
+                $("#event_type_edit").val("");
+                $("#event_time_start_edit").val("");
+                $("#event_time_end_edit").val("");
+                $("#event_content_edit").val("");
+                updateEvent = null;
+                $("#myEditModal").modal('hide');
+            });
+            $('#calendar').fullCalendar({
+                schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+                lang: 'zh-cn',
+                editable: true,
+                aspectRatio: 1.8,
+                scrollTime: '00:00',
+                header: {
+                    left: 'today prev,next',
+                    center: 'title',
+                    right: ''
+                },
+                defaultView: 'timelineWeekDay',
+                views: {
+                    timelineWeekDay: {
+                        type: 'timeline',
+                        slotDuration: '24:00',
+                        duration: { days: 7 }
+                    }
+                },
+                resourceRender: function(resource, cellEls) {
+                    cellEls.on('click', function() {
+                        if (confirm('确实要删除 ' + resource.title + ' 吗?')) {
+                            $('#calendar').fullCalendar('removeResource', resource);
+                        }
+                    });
+                },
+                dayClick: function(date, jsEvent, view, resource) {
+
+                    var date = date.format("YYYY-MM-DD");
+                    var event_id = resource.id;
+                    $("#event_id").val(event_id);
+                    $("#event_date").val(date);
+                    $("#myModal").modal({
+                        backdrop:'static',
+                        keyboard: true
+                    });
+                },
+                eventClick: function(event, element) {
+
+                    updateEvent = event;
+
+                    $("#event_date_edit").val(event.start.format("YYYY-MM-DD"));
+                    $("#event_type_edit").val(event.etype);
+                    $("#event_time_start_edit").val(event.start.format("HH:mm"));
+                    $("#event_time_end_edit").val(event.end.format("HH:mm"));
+                    $("#event_content_edit").val(event.content);
+                    $("#resourceTitle").val(event.resourceTitle);
+
+                    $("#myEditModal").modal({
+                        backdrop:'static',
+                        keyboard: true
+                    });
+
+                },
+                resourceAreaWidth: '25%',
+                resourceLabelText: '事件',
+                resources: [
+                    { id: 'a', title: 'Name A' },
+                    { id: 'b', title: 'Name B', eventColor: 'green' },
+                    { id: 'c', title: 'Name C', eventColor: 'orange' },
+                    { id: 'd', title: 'Name D', },
+                    { id: 'e', title: 'Name E' },
+                    { id: 'f', title: 'Name F', eventColor: 'red' },
+                    { id: 'g', title: 'Name G' },
+                    { id: 'h', title: 'Name H' },
+                    { id: 'i', title: 'Name I' },
+                    { id: 'j', title: 'Name J' },
+                    { id: 'k', title: 'Name K' },
+                    { id: 'l', title: 'Name L' },
+                    { id: 'm', title: 'Name M' },
+                    { id: 'n', title: 'Name N' },
+                    { id: 'o', title: 'Name O' },
+                    { id: 'p', title: 'Name P' },
+                    { id: 'q', title: 'Name Q' },
+                    { id: 'r', title: 'Name R' },
+                    { id: 's', title: 'Name S' },
+                    { id: 't', title: 'Name T' },
+                    { id: 'u', title: 'Name U' },
+                    { id: 'v', title: 'Name V' },
+                    { id: 'w', title: 'Name W' },
+                    { id: 'x', title: 'Name X' },
+                    { id: 'y', title: 'Name Y' },
+                    { id: 'z', title: 'Name Z' }
+                ],
+                events: [
+                    { id: '1', resourceId: 'b', start: '2016-01-07T02:00:00', end: '2016-01-07T07:00:00', title: 'event 1' },
+                    { id: '2', resourceId: 'c', start: '2016-01-07T05:00:00', end: '2016-01-07T22:00:00', title: 'event 2' },
+                    { id: '3', resourceId: 'd', start: '2016-01-06', end: '2016-01-08', title: 'event 3' },
+                    { id: '4', resourceId: 'e', start: '2016-01-07T03:00:00', end: '2016-01-07T08:00:00', title: 'event 4' },
+                    { id: '5', resourceId: 'f', start: '2016-01-07T00:30:00', end: '2016-01-07T02:30:00', title: 'event 5' },
+                ]
+            });
+
+            $("#add_new").click(function(){
+                $("#myModal").modal({
+                    backdrop:'static',
+                    keyboard: true
+                });
+            });
+
+        });
+
+
+
+
+
+
+    </script>
+    <style>
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+            font-size: 14px;
+        }
+
+        #calendar {
+            max-width: 900px;
+            margin: 50px auto;
+        }
+
+    </style>
+</head>
+<body>
+<p>
+    <button id="add_new">ADD</button>
+</p>
+<div class="modal fade" id="myModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="gridSystemModalLabel">新建日程</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>事件：</label>
+                        <select name="event_id" id="event_id" class="form-control" >
+                            <option></option>
+                            <!-- 这里替换成实际的左边的那块列表。 valve的作用是让日程找到所在的行。  -->
+                            <option value="a">事件a</option>
+                            <option value="b">事件b</option>
+                            <option value="c">事件c</option>
+                            <option value="d">事件d</option>
+                            <option value="e">事件e</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>日期：</label>
+                        <input name="event_date" id="event_date"  class="form-control"   onFocus="WdatePicker({lang:'zh-cn'})" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>分类：</label>
+                        <select name="event_type" id="event_type" class="form-control" >
+                            <option></option>
+                            <option value="迎送">迎送</option>
+                            <option value="宴请">宴请</option>
+                            <option value="安保">安保</option>
+                            <option value="车辆">车辆</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>开始时间：</label>
+                        <input name="event_time_start" id="event_time_start"  class="form-control" onfocus="WdatePicker({skin:'whyGreen',dateFmt:'HH:mm'})" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>结束时间：</label>
+                        <input name="event_time_end" id="event_time_end"  class="form-control" onfocus="WdatePicker({skin:'whyGreen',dateFmt:'HH:mm'})"/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>具体内容：</label>
+                        <textarea  name="event_content" id="event_content"  class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary btn-add-event">确定</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal fade" id="myEditModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="gridSystemModalLabelEdit">修改日程</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>事件：</label>
+                        <input name="resourceTitle" id="resourceTitle"  class="form-control" readonly />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>日期：</label>
+                        <input name="event_date_edit" id="event_date_edit"  class="form-control"   onFocus="WdatePicker({lang:'zh-cn'})" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>分类：</label>
+                        <select name="event_type_edit" id="event_type_edit" class="form-control" >
+                            <option></option>
+                            <option value="迎送">迎送</option>
+                            <option value="宴请">宴请</option>
+                            <option value="安保">安保</option>
+                            <option value="车辆">车辆</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>开始时间：</label>
+                        <input name="event_time_start_edit" id="event_time_start_edit"  class="form-control" onfocus="WdatePicker({skin:'whyGreen',dateFmt:'HH:mm'})" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>结束时间：</label>
+                        <input name="event_time_end_edit" id="event_time_end_edit"  class="form-control" onfocus="WdatePicker({skin:'whyGreen',dateFmt:'HH:mm'})"/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>具体内容：</label>
+                        <textarea  name="event_content_edit" id="event_content_edit"  class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger pull-left btn-delete-event" >删除</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary btn-update-event">确定</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div id='calendar'></div>
+</body>
+</html>
